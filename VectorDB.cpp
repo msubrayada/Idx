@@ -134,7 +134,6 @@ namespace MetricDB_App {
         this->P=p;
         this->Len_Vector=len_vector;
 
-//        this->Name=file;
         this->Vectors=new double*[n];
         ifstream infile (file,std::ifstream::in);
         string line;
