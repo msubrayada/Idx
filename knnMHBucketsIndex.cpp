@@ -82,6 +82,7 @@ namespace MinHash_App
         //output->open(strsavefile,ios::out|ios::binary);
         //this->Save(output);
         //output->close();
+        cout << "Preparing output ..."<<endl;
 
         std::ofstream out(strsavefile);
         out << this->K << "\n";
@@ -124,6 +125,7 @@ namespace MinHash_App
         wss=new wstring(st.begin(),st.end());
         //        wstring str =wstring(ss.);
 //        str<<ss;
+        cout << "Done building!"<<endl;
         return wss->c_str() ;
     }
     void knnMHBuckets::Build(MetricDB* db, int *refs,int r, int k, int bucketlen, int buckets)
@@ -139,12 +141,17 @@ namespace MinHash_App
         cout<< "Building knn's ..."<<endl;
         // Find the knn
 
-
+        auto begin = chrono::high_resolution_clock::now();
 #pragma omp parallel for schedule(dynamic)
         for (int i=0;i<db->Count();++i)
         {
             KNN[i] = GetKnn (db->Get(i));
         }
+        auto end = chrono::high_resolution_clock::now();
+        auto dur = end - begin;
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        cout << "Knn Time: "<<ms << endl;
+        
         cout<< "Building MinHashes ..."<< endl;
 
         // Get minhashes
@@ -159,6 +166,7 @@ namespace MinHash_App
         }
 
         cout << "Storing into dictionary ..."<<endl;
+        begin = chrono::high_resolution_clock::now();
         this->Tables=new unordered_map<int, vector<int>> [buckets];
         for(int i = 0; i < buckets; ++i)
            this->Tables[i]=*new unordered_map<int, vector<int>> ();
@@ -180,6 +188,10 @@ namespace MinHash_App
                 }
             }
         }
+        end = chrono::high_resolution_clock::now();
+        dur = end - begin;
+        ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        cout << "Storing into dictionary Time: "<<ms << endl;
         delete[] HASHES;
     }
 
@@ -296,6 +308,6 @@ namespace MinHash_App
 extern "C"{
     knnMHBuckets* HashesExtractor_new(){return new knnMHBuckets();}
     const wchar_t * HashesExtractor_Bulkbuild(knnMHBuckets* foo,wchar_t * mfilename,wchar_t* savefile,int arg1,int arg2,int arg3,int arg4,int arg5,int arg6,int arg7){return foo->Build(mfilename,savefile,arg1,arg2,arg3,arg4, arg5,arg6,arg7);}
-    int*  HashesExtractor_Build_query(knnMHBuckets* foo,double* query,wchar_t* loadfile){return foo->SearchKNN(query,loadfile);}
+    int*  HashesExtractor_Build_query(knnMHBuckets* foo,double* query,wchar_t* loadfile){return foo->SearchKNN_Params(query,loadfile);}
     }
 }
